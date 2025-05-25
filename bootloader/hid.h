@@ -22,6 +22,20 @@
 void HIDUSB_Reset();
 void HIDUSB_EPHandler(uint16_t Status);
 
+#define FLASH_KEY1 0x45670123
+#define FLASH_KEY2 0xCDEF89AB
+
+// Specific for STM32F446 (but possibly others), change according to your microcontroller.
+uint32_t sectorAddress[] = { 0x08000000,
+                             0x08004000,
+                             0x08008000,
+                             0x0800C000,
+                             0x08010000,
+                             0x08020000,
+                             0x08040000,
+                             0x08060000,
+                             0x08080000};
+
 __attribute__((weak)) void HIDUSB_DataReceivedHandler(uint16_t *Data,
 		uint16_t Length);
 

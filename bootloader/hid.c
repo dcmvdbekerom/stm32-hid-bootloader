@@ -16,7 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stm32f10x.h>
+#include <stm32f4xx.h>
 #include <string.h>
 
 #include "usb.h"
@@ -35,6 +35,8 @@ static uint8_t CMD_SIGNATURE[] = {'B','T','L','D','C','M','D'};
 static uint8_t pageData[1024];
 static volatile uint8_t currentPage = MIN_PAGE;
 static volatile uint16_t currentPageOffset = 0;
+static volatile uint32_t currentSector = 0; //TODO: should be 8 bit?
+
 
 extern volatile uint8_t DeviceAddress;
 extern volatile uint16_t DeviceConfigured, DeviceStatus;
@@ -220,19 +222,33 @@ static void HIDUSB_FlashLock() {
 	bit_set(FLASH->CR, FLASH_CR_LOCK);
 }
 
-static void HIDUSB_FormatFlashPage(uint32_t page) {
+
+static void HIDUSB_FormatFlashSector(uint32_t sector) {
 	while(FLASH->SR & FLASH_SR_BSY);
 
-	bit_set(FLASH->CR, FLASH_CR_PER);
-
-	FLASH->AR = page;
-
+	bit_set(FLASH->CR, FLASH_CR_SER);
+	FLASH->CR |= (sector << FLASH_CR_SNB_Pos);  // Select sector
 	bit_set(FLASH->CR, FLASH_CR_STRT);
 
 	while(FLASH->SR & FLASH_SR_BSY);
 
-	bit_clear(FLASH->CR, FLASH_CR_PER);
+	bit_clear(FLASH->CR, FLASH_CR_SER);
 }
+
+
+// static void HIDUSB_FormatFlashPage(uint32_t page) {
+	// while(FLASH->SR & FLASH_SR_BSY);
+
+	// bit_set(FLASH->CR, FLASH_CR_PER);
+
+	// FLASH->AR = page;
+
+	// bit_set(FLASH->CR, FLASH_CR_STRT);
+
+	// while(FLASH->SR & FLASH_SR_BSY);
+
+	// bit_clear(FLASH->CR, FLASH_CR_PER);
+// }
 
 static void HIDUSB_WriteFlash(uint32_t page, uint8_t *data, uint16_t size) {
 	while(FLASH->SR & FLASH_SR_BSY);
@@ -292,7 +308,12 @@ void HIDUSB_HandleData(uint8_t *data) {
 			pageAddress = 0x08000000 + (currentPage * 1024);
 
 			HIDUSB_FlashUnlock();
-			HIDUSB_FormatFlashPage(pageAddress);
+            
+            while (pageAddress >= sectorAddress[currentSector]){
+                HIDUSB_FormatFlashSector(currentSector);
+                currentSector++;
+            }
+            
 			HIDUSB_WriteFlash(pageAddress, pageData, 1024);
 			HIDUSB_FlashLock();
 

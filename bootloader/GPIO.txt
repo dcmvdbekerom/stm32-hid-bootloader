@@ -1,0 +1,44 @@
+GPIOx_MODER.MODERy[1:0]
+00 Input
+01 General purpose output
+10 Alternate function
+11 Analog
+
+GPIOx_OTYPER.OTy[0]
+0: Output push-pull
+1: Output open-drain
+
+GPIOx_OSPEEDR.OSPEEDRy[1:0]
+00: Low speed
+01: Medium speed
+10: Fast speed
+11: High speed
+
+GPIOx_PUPDR.PUPDRy[1:0]
+00: No pull-up or pull-down
+01: Pull-up
+10: Pull-down
+11: <reserved>
+
+~~~~
+
+GPIOx_IDR.IDRy[0]
+0: read 0
+1: read 1
+
+GPIOx_ODR.ODRy[0]
+0: write 0
+1: write 1
+
+GPIOx_BSRR.BRy[0]
+0: no action
+1: reset pin y
+
+GPIOx_BSRR.BSy[0]
+0: no action
+1: set pin y
+
+
+
+
+

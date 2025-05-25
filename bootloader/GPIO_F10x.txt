@@ -1,0 +1,13 @@
+GPIOx_CRL/H.CNFy[1:0]
+    [IN]        [OUT]
+00: IN Analog   GPO PP 
+01: IN float    GPO OD
+10: IN PU/PD    AFO PP
+11: Reserverd   AFO OD
+
+GPIOx_CRL/H.MODEy[1:0]
+00: IN mode
+01: OUT 10 MHz
+10: OUT  2 MHz
+11: OUT 50 MHz
+

@@ -16,7 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stm32f10x.h>
+#include <stm32f4xx.h>
 
 #include "usb.h"
 #include "hid.h"
@@ -30,19 +30,27 @@ int main() {
 	uint32_t usrMain = *(volatile uint32_t *)(USER_PROGRAM + 0x04); /* reset ptr in vector table */
 
 	// Turn GPIOB clock on
-	bit_set(RCC->APB2ENR, RCC_APB2ENR_IOPBEN);
+	//bit_set(RCC->APB2ENR, RCC_APB2ENR_IOPBEN);
+    
+    //Turn GPIOC clock on
+    bit_set(RCC->AHB1ENR, RCC_AHB1ENR_GPIOCEN);
 
 	// Set B2 as Input Mode Floating
-	bit_clear(GPIOB->CRL, GPIO_CRL_MODE2);
-	bit_set(GPIOB->CRL, GPIO_CRL_CNF2_0);
-	bit_clear(GPIOB->CRL, GPIO_CRL_CNF2_1);
+  
+	//bit_clear(GPIOB->CRL, GPIO_CRL_MODE2); //input
+	//bit_set  (GPIOB->CRL, GPIO_CRL_CNF2_0);
+	//bit_clear(GPIOB->CRL, GPIO_CRL_CNF2_1);
+
+    // Set C13 to input (no 'floating' available)
+    bit_clear(GPIOC->MODER, GPIO_MODER_MODER13_0);    
+    bit_clear(GPIOC->MODER, GPIO_MODER_MODER13_1);    
 
 	// If B2 (BOOT1) is HIGH then go into HID bootloader...
-	if(GPIOB->IDR & GPIO_IDR_IDR2) {
+	if(GPIOC->IDR & GPIO_IDR_ID13) {
 		USB_Init(HIDUSB_EPHandler, HIDUSB_Reset);
 	} else {
-		// Turn GPIOB clock off
-		bit_clear(RCC->APB2ENR, RCC_APB2ENR_IOPBEN);
+		// Turn GPIOC clock off
+		bit_clear(RCC->AHB1ENR, RCC_AHB1ENR_GPIOCEN);
 
 		SCB->VTOR = USER_PROGRAM;
 

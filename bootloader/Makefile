@@ -1,26 +1,26 @@
 TARGET = HIDBOOTLOADER
 
-DEVICE = STM32F10X_MD
+DEVICE = STM32F446xx
 
 VECTOR_TABLE_OFFSET = 0x0000
 
 SRCS = main.c usb.c hid.c led.c
 
-DEVICE_SRCS += ../CMSIS/Device/ST/STM32F10x/Source/Templates/gcc/startup_stm32f10x_md.s
-DEVICE_SRCS += system_stm32f10x.c
+DEVICE_SRCS += ../CMSIS/Device/ST/STM32F4xx/Source/Templates/gcc/startup_stm32f446xx.s
+DEVICE_SRCS += system_stm32f4xx.c
 
 INCLUDE_DIRS += -I .
-INCLUDE_DIRS += -I ../CMSIS/Device/ST/STM32F10x/Include 
+INCLUDE_DIRS += -I ../CMSIS/Device/ST/STM32F4xx/Include 
 INCLUDE_DIRS += -I ../CMSIS/Include
 
-LINKER_SCRIPT = STM32F103C8T6.ld
+LINKER_SCRIPT = STM32F446RET6.ld
 
 SRCS += $(DEVICE_SRCS)
 OBJS = $(addsuffix .o,  $(basename $(SRCS)))
 
-ASFLAGS += -mcpu=cortex-m3 -mthumb
+ASFLAGS += -mcpu=cortex-m4 -mthumb
 
-CFLAGS += -mcpu=cortex-m3 -mthumb -Wall -Os
+CFLAGS += -mcpu=cortex-m4 -mthumb -Wall -Os
 CFLAGS += -fno-common -static
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -specs=nano.specs -specs=nosys.specs

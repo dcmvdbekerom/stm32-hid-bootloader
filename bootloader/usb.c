@@ -16,7 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stm32f10x.h>
+#include <stm32f4xx.h>
 #include <stdlib.h>
 
 #include "usb.h"
@@ -108,11 +108,14 @@ void USB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length) {
 }
 
 void USB_Shutdown() {
-	bit_set(RCC->APB2ENR, RCC_APB2ENR_IOPAEN);
+    // Enable clock in GPIOA
+	//bit_set(RCC->APB2ENR, RCC_APB2ENR_IOPAEN);
+    bit_set(RCC->AHB1ENR, RCC_AHB1ENR_GPIOAEN);
 
 	// Disable USB IRQ
-	NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
-	_SetISTR(0);
+	//NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
+	NVIC_DisableIRQ(OTG_FS_IRQn);
+    _SetISTR(0);
 
 	DeviceConfigured = DeviceStatus = 0;
 
@@ -124,28 +127,53 @@ void USB_Shutdown() {
 	_SetCNTR(0x03);
 
 	// PA_12 output mode: General purpose output open drain (b01)
-	bit_set(GPIOA->CRH, GPIO_CRH_CNF12_0);
-	bit_clear(GPIOA->CRH, GPIO_CRH_CNF12_1);
+	//bit_set(GPIOA->CRH, GPIO_CRH_CNF12_0);
+	//bit_clear(GPIOA->CRH, GPIO_CRH_CNF12_1);
+    
+    //general purpose output (b01)
+    bit_set(GPIOA->MODER, GPIO_MODER_MODER12_0);
+    bit_clear(GPIOA->MODER, GPIO_MODER_MODER12_1);
+    
+    //open drain (b1)
+    bit_set(GPIOA->OTYPER, GPIO_OTYPER_OT12);
+
+    // high speed (b11)
+    bit_set(GPIOA->OSPEEDR, GPIO_OSPEEDR_OSPEED12_0);
+    bit_set(GPIOA->OSPEEDR, GPIO_OSPEEDR_OSPEED12_1);
+
+    // no pull up/down (b00)
+    bit_clear(GPIOA->PUPDR, GPIO_PUPDR_PUPDR12_0);
+    bit_clear(GPIOA->PUPDR, GPIO_PUPDR_PUPDR12_1);
+
 
 	// Set PA_12 to output
-	bit_set(GPIOA->CRH, GPIO_CRH_MODE12);// PA_12 set as: Output mode, max speed 50 MHz.
+	//bit_set(GPIOA->CRH, GPIO_CRH_MODE12);// PA_12 set as: Output mode, max speed 50 MHz.
 
 	// Sinks A12 to GND
-	GPIOA->BRR = GPIO_BRR_BR12;
+	GPIOA->BSRR = GPIO_BSRR_BR12 ;
 
 	// Disable USB Clock on APB1
-	bit_clear(RCC->APB1ENR, RCC_APB1ENR_USBEN);
+	//bit_clear(RCC->APB1ENR, RCC_APB1ENR_USBEN);
+    bit_clear(RCC->AHB2ENR, RCC_AHB2ENR_OTGFSEN);
 }
 
 static void USB_TurnOn() {
-	bit_set(RCC->APB2ENR, RCC_APB2ENR_IOPAEN);
+    // Enable RCC on GPIOA
+	//bit_set(RCC->APB2ENR, RCC_APB2ENR_IOPAEN);
+    bit_set(RCC->AHB1ENR, RCC_AHB1ENR_GPIOAEN);
 
 	// PA_12 output mode: General purpose Input Float (b01)
-	bit_set(GPIOA->CRH, GPIO_CRH_CNF12_0);
-	bit_clear(GPIOA->CRH, GPIO_CRH_CNF12_1);
+	//bit_set(GPIOA->CRH, GPIO_CRH_CNF12_0);
+	//bit_clear(GPIOA->CRH, GPIO_CRH_CNF12_1);
+	//bit_clear(GPIOA->CRH, GPIO_CRH_MODE12);    
+    
+    bit_clear(GPIOA->MODER, GPIO_MODER_MODER12_0);
+    bit_clear(GPIOA->MODER, GPIO_MODER_MODER12_1);
+   
+    bit_clear(GPIOA->PUPDR, GPIO_PUPDR_PUPDR12_0);
+    bit_clear(GPIOA->PUPDR, GPIO_PUPDR_PUPDR12_1);
 
-	// Set PA_12 to Input mode
-	bit_clear(GPIOA->CRH, GPIO_CRH_MODE12);
+
 }
 
 void USB_Init(void (*EPHandlerPtr)(uint16_t), void (*ResetHandlerPtr)(void)) {
@@ -162,8 +190,10 @@ void USB_Init(void (*EPHandlerPtr)(uint16_t), void (*ResetHandlerPtr)(void)) {
 
 	DeviceConfigured = DeviceStatus = 0;
 
-	bit_set(RCC->APB1ENR, RCC_APB1ENR_USBEN);
-	NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+    // Enable RCC on USb
+	//bit_set(RCC->APB1ENR, RCC_APB1ENR_USBEN);
+	bit_set(RCC->AHB2ENR, RCC_AHB2ENR_OTGFSEN);
+    NVIC_EnableIRQ(OTG_FS_IRQn);
 
 	/*** CNTR_PWDN = 0 ***/
 	_SetCNTR(CNTR_FRES);
@@ -190,7 +220,7 @@ uint16_t USB_IsDeviceConfigured() {
 	return DeviceConfigured;
 }
 
-void USB_LP_CAN1_RX0_IRQHandler() {
+void OTG_FS_IRQHandler() {
 	// Handle Reset
 	if (_GetISTR() & ISTR_RESET) {
 		_SetISTR(_GetISTR() & CLR_RESET);
